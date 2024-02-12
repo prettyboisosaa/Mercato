@@ -10,11 +10,27 @@ def connect():
 def list_products(product):
     conn = connect()
     cur = conn.cursor()
-    if product != "la":
-        cur.execute("SELECT seller_id, product_name FROM product WHERE product = ?", (product))
+    products = None
+    
+    if product == "la":
+        products = cur.execute("SELECT seller_id, product_name FROM product")
     else:
-        cur.execute("SELECT seller_id, product_name FROM product")
-    return cur.fetchall()
+        products = cur.execute("SELECT seller_id, product_name FROM product WHERE product = ?", (product))
+    
+    con.close()
+    return products
+
+def check_product(product, seller):
+    conn = connect()
+    cur = conn.cursor()
+
+    if product != "la":
+        cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
+        result = cur.fetchone()
+        
+        conn.close()
+        return result[0] > 0
+    return False # you cannot select 'la' as a product
 
 def insert_product(product, seller, price, quantity):
     conn = connect()
@@ -44,7 +60,6 @@ def init_db():
     print("Database successfully created")
     conn.commit()
     conn.close()
-
 
 if __name__ == "__main__":
     init_db()
