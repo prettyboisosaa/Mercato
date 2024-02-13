@@ -20,16 +20,6 @@ def list_products(product):
     con.close()
     return products
 
-def check_product(product, seller):
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
-    result = cur.fetchone()
-    
-    conn.close()
-    return result[0] > 0
-
 def insert_product(product, seller, price, quantity):
     conn = connect()
     cur = conn.cursor()
@@ -43,10 +33,21 @@ def delete_product(product, seller):
     conn = connect()
     cur = conn.cursor()
     
-    cur.execute("DELETE FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
-    
-    conn.commit()
+    if check_product(prodcut, seller):
+        cur.execute("DELETE FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
+        conn.commit()
+
     conn.close()
+
+def check_product(product, seller):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
+    result = cur.fetchone()
+    
+    conn.close()
+    return result[0] > 0
 
 def init_db(): #Crea il database
     conn = connect()

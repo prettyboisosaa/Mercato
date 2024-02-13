@@ -43,24 +43,26 @@ def listen_to_buyer(sock): # function to serve buyer clients
             seller_id = sock.recv(1024).decode()
         negotiation(sock, seller_id)
 
-# TODO: rivedere seller handling e implementarlo con il db
-def listen_to_seller(sock, id): # function to serve seller clients
-    sock.send("Press c to add/change you products or wait for somebody to buy them.".encode())
+def listen_to_seller(sock, seller_id): # function to serve seller clients
     while True:
+        sock.send("Press:\nc to add/change you products.\nd to delete a product.\nOr just wait for somebody to buy".encode())
         msg = sock.recv(256).decode()
         if msg == 'c': # logic to add or change products
-            sock.send("What do you want to add/change?".encode())
-            msg = sock.recv(256).decode()
-            sock.send(f"How many {msg} do you want to sell?".encode())
-            msg2 = int_message(sock, "Only integers accepted.\nHow many of it do you want to sell?")
+            sock.send("Which product do you want to add/change?".encode())
+            product = sock.recv(256).decode()
             sock.send("What is the price each?".encode())
-            msg3 = int_message(sock, "Only integers accepted.\nWhat is its price?")
+            price = int_message(sock, "Only integers accepted.\nWhat is its price?")
+            sock.send(f"How many {product} do you want to sell?".encode())
+            quantity = int_message(sock, "Only integers accepted.\nHow many of it do you want to sell?")
             try:
-                users[id]["products"][msg] = {"product" : msg, "quantity" : msg2, "price" : msg3}   # TODO: da fare con il DB
-                sock.send(f"Added/Changed: {msg}\nQuantity: {msg2}\nPrice each: {msg3}".encode())
+                db_lib.insert(product, seller_id, price, quantity)
+                sock.send(f"Added/Changed: {product}\nQuantity: {quantity}\nPrice each: {msg3}".encode())
             except:
                 sock.send("Something went wrong, please try again.".encode())
-            sock.send("Press c to add/change you products or wait for somebody to buy them.".encode())
+        elif msg == 'd':
+            sock.send("Which product do you want to delete?".encode())
+            product = sock.recv(256).decode()
+            db_lib.delete_product(product, seller_id)
         else:
             sock.send("Not implemented yet.".encode())  #TODO
 
