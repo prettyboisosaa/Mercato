@@ -45,10 +45,10 @@ Note: it is recommended to run multiple clients to ensure enough members to init
 Please note: The negotiation process involves exchanging integer values to agree on prices. Make sure to follow the prompts during negotiations.
 
 ## Credits
-[Leitos](https://github.com/LeitosRoncio)
-[Sosa](https://github.com/prettyboisosaa)
-[Sartoz](https://github.com/frakizan)
-[Fonji](https://github.com/Jonjiwjk)
+### [Leitos](https://github.com/LeitosRoncio)
+### [Sosa](https://github.com/prettyboisosaa)
+### [Sartoz](https://github.com/frakizan)
+### [Fonji](https://github.com/Jonjiwjk)
 
 ## Badges
 
