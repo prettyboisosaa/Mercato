@@ -52,5 +52,6 @@ Please note: The negotiation process involves exchanging integer values to agree
 
 ## Badges
 
-[![Example Badge](example-badge-link)](link-to-related-tool)
+![Static Badge](https://img.shields.io/badge/:badgeContent)
+
 
