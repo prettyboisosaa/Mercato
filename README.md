@@ -52,6 +52,7 @@ Please note: The negotiation process involves exchanging integer values to agree
 
 ## Badges
 
-![Static Badge](https://img.shields.io/badge/logo-python-0a65f7)
+![Static Badge](![Static Badge](https://img.shields.io/badge/python-blue?style=flat&logo=python&logoColor=yellow&labelColor=blue)
+)
 
 
