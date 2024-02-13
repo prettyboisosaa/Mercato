@@ -8,9 +8,8 @@ def sender():
         msg = input()
         s.send(msg.encode())
 
-
 with socket.socket() as s:
     s.connect((HOST, PORT))
-    t1 = Thread(target=sender).start()
+    Thread(target=sender).start()
     while True:
         print(s.recv(2048).decode())
