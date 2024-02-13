@@ -24,13 +24,11 @@ def check_product(product, seller):
     conn = connect()
     cur = conn.cursor()
 
-    if product != "la":
-        cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
-        result = cur.fetchone()
-        
-        conn.close()
-        return result[0] > 0
-    return False # you cannot select 'la' as a product
+    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
+    result = cur.fetchone()
+    
+    conn.close()
+    return result[0] > 0
 
 def insert_product(product, seller, price, quantity):
     conn = connect()
@@ -50,8 +48,7 @@ def delete_product(product, seller):
     conn.commit()
     conn.close()
 
-def init_db():
-    """Crea il database"""
+def init_db(): #Crea il database
     conn = connect()
 
     with open(join("sql", "market_db.sql"), encoding="utf-8") as f:

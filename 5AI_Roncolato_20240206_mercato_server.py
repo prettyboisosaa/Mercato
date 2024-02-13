@@ -31,13 +31,16 @@ def listen_to_buyer(sock): # function to serve buyer clients
         sock.send(f"These are the available products:\n{db_lib.list_products(product)}".encode())
         if product == 'la':
             sock.send("Choose the product you want to buy".encode())
-            while selected_product := sock.recv(1024).decode() == 'la':
+            while product := sock.recv(1024).decode() == 'la':
                 sock.send("'la' is not an available product".encode())
         elif not product:
             sock.send("There are no items in the market at this moment.".encode())
         
-        sock.send(f"These are the sellers who have {selected_product}:\n{db_lib.list_products(selected_product)}\nWho do you want to buy from?".encode())
-        seller_id = check_seller(sock, msg)
+        sock.send(f"These are the sellers who have {product}:\n{db_lib.list_products(product)}\nWho do you want to buy from?".encode())
+        seller_id = sock.recv(1024).decode()
+        while not db_lib.check_product(product, seller_id) and users[str(seller_id)]["negotiation"]:
+            sock.send("The seller you have chosen is not available".encode())
+            seller_id = sock.recv(1024).decode()
         negotiation(sock, seller_id)
 
 # TODO: rivedere seller handling e implementarlo con il db
@@ -60,21 +63,6 @@ def listen_to_seller(sock, id): # function to serve seller clients
             sock.send("Press c to add/change you products or wait for somebody to buy them.".encode())
         else:
             sock.send("Not implemented yet.".encode())  #TODO
-
-# TODO: rifare il check_seller e spostarlo in db_lib
-def check_seller(sock, product): # checks if the seller chosen is aviable and has the right product
-    valid_seller = False
-    nvs_msg = "Seller not valid. Who do you want to buy from?".encode()
-    while not valid_seller:
-        seller = sock.recv(32).decode()
-        try:
-            if users[seller]["products"]: # TODO: da fare con il DB
-                return seller
-            users[seller]["products"][product]["product"] == product # TODO: da fare con il DB
-            valid_seller = True
-        except:
-            sock.send(nvs_msg)
-    return seller
 
 def int_message(sock, error_message): # always returns an integer given by the client
     error_message = error_message.encode()
