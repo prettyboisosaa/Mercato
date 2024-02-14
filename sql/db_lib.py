@@ -13,8 +13,19 @@ def list_products(product):
     products = None
     if product == "la":
         products = cur.execute("SELECT seller_id, product_name FROM product")
+        #ottiene i nomi delle colonne dal cur
+        column_names = [description[0] for description in cur.description]
+        products = []
+        for row in cur.fetchall():
+            row_dict = {}
+            for i, value in enumerate(row):
+                row_dict[column_names[i]] = value
+            products.append(row_dict)
     else:
-        products = cur.execute("SELECT seller_id, product_name FROM product WHERE product = ?", (product))
+        fetch_name = cur.execute("SELECT seller_id FROM product WHERE product_name = ?", (product,)).fetchone()
+        products =  {'seller_id' : fetch_name[0], 'product_name' : product}
+
+
     conn.close()
     return products
 
@@ -23,6 +34,7 @@ def insert_product(product, seller, price, quantity):
     cur = conn.cursor()
     cur.execute("INSERT INTO product (product_name, seller_id, price, quantity) VALUES (?, ?, ?, ?)",(product, seller, price, quantity))
     conn.commit()
+    print('product correctly added.')
     conn.close()
 
 def delete_product(product, seller):
