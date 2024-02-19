@@ -6,10 +6,17 @@ PORT = 8080
 def sender():
     while True:
         msg = input()
-        s.send(msg.encode())
+        try:
+            s.send(msg.encode())
+        except:
+            break
 
 with socket.socket() as s:
     s.connect((HOST, PORT))
     Thread(target=sender).start()
     while True:
-        print(s.recv(1024).decode(), end='')
+        try:
+            print(s.recv(1024).decode(), end='')
+        except:
+            print("Server closed.")
+            break

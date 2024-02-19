@@ -24,7 +24,7 @@ def list_products(product): # ritorna tutti i prodotti nel database
         try:
             products.append({'seller_id' : fetch_name[0], 'product_name' : product})
         except:
-            print("diocane")
+            pass
     conn.close()
     return products
 
@@ -43,10 +43,18 @@ def delete_product(product, seller): # elimina i prodotti dal databse
         conn.commit()
     conn.close()
 
-def check_product(product, seller): # controlla se il prodotto selezionato esiste
+def check_product(product): # controlla se il prodotto selezionato esiste
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
+    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ?", (product,))
+    result = cur.fetchone()
+    conn.close()
+    return result[0] > 0
+
+def check_seller(seller_id, product): # controlla se il prodotto selezionato esiste
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM product WHERE seller_id = ? AND product_name = ?", (seller_id, product))
     result = cur.fetchone()
     conn.close()
     return result[0] > 0
