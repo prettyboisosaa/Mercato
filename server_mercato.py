@@ -27,23 +27,28 @@ def listen_to_client(sock): # function to select the type of client
 
 def listen_to_buyer(sock): # function to serve buyer clients
     while True:
-        sock.send("Write what you want to buy or 'la' to list all the aviable products.\n".encode())
+        sock.send("Write what you want to buy or 'la' to list all the available products.\n".encode())
         product = sock.recv(1024).decode()
         product_list = db_lib.list_products(product)
-        if product_list:
+        if product_list != []:
             sock.send(f"These are the available products:\n{product_list}\n".encode())
             if product == "la":
                 sock.send("Choose the product you want to buy.\n".encode())
-                product = sock.recv(1024).decode()
-                while product != product_list: # TODO with working db_lib functions
+                while True:
+                    product = sock.recv(1024).decode()
+                    for prod in product_list:
+                        if prod["product_name"] == product:
+                            break
+                    if prod["product_name"] == product:
+                        break
                     sock.send(f"{product} is not an available product\nChoose a valid product.\n".encode())
             sock.send("Who do you want to buy from?\n".encode())
             seller_id = sock.recv(1024).decode()
             while True:
                 if not db_lib.check_product(product, seller_id):
                     sock.send("The seller you have chosen is not valid.\n".encode())
-                elif users[seller_id]["negotiation"]:
-                    sock.send("The seller you have chosen is not aviable right now.\n".encode())
+                elif users[seller_id]["negotiating"]:
+                    sock.send("The seller you have chosen is not available right now.\nTry again later or choose another seller.\n".encode())
                 else:
                     break
                 seller_id = sock.recv(1024).decode()
@@ -52,7 +57,7 @@ def listen_to_buyer(sock): # function to serve buyer clients
             if product == "la":
                 sock.send("There are no items in the market at this moment.\n".encode())
             else:
-                sock.send("What you searched is not aviable right now.\n".encode())
+                sock.send("What you searched is not available right now.\n".encode())
 
 def listen_to_seller(sock, seller_id): # function to serve seller clients
     while True:

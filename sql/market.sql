@@ -1,6 +1,6 @@
 PRAGMA foreign_keys = ON;
-
-CREATE TABLE IF NOT EXISTS product
+DROP TABLE IF EXISTS product;
+CREATE TABLE product
 (
     product_name VARCHAR,
     seller_id INTEGER,
