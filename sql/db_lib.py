@@ -11,7 +11,6 @@ def list_products(product):
     conn = connect()  # Make sure connect() function is defined elsewhere
     cur = conn.cursor()
     products = []
-
     if product == "la":
         cur.execute("SELECT seller_id, product_name, price, quantity FROM product")
         rows = cur.fetchall()
@@ -31,7 +30,6 @@ def list_products(product):
     conn.close()
     return products
 
-
 def insert_product(product, seller, price, quantity): # inserisce i prodotti nel databse
     conn = connect()
     cur = conn.cursor()
@@ -42,13 +40,13 @@ def insert_product(product, seller, price, quantity): # inserisce i prodotti nel
 def delete_product(product, seller): # elimina i prodotti dal databse
     conn = connect()
     cur = conn.cursor()
-    message = ''
-    if check_product(product, seller):
+    message = ""
+    if check_seller(product, seller):
         cur.execute("DELETE FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
         conn.commit()
-        message = 'product deleted'
+        message = "product deleted."
     else:
-        message = 'the product doesnt exist: you cant delete'
+        message = "the product doesnt exist: you cant delete."
     conn.close()
     return message
 
@@ -60,15 +58,15 @@ def check_product(product): # controlla se il prodotto selezionato esiste
     conn.close()
     return result[0] > 0
 
-def check_seller(product, seller): # controlla se il prodotto selezionato esiste
+def check_seller(product, seller): # controlla se il venditore ha un determinato prodotto
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM product WHERE product = ? AND seller_id = ?", (product, seller))
+    cur.execute("SELECT COUNT(*) FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
     result = cur.fetchone()
     conn.close()
     return result[0] > 0
 
-def update_product(product, seller, quantity):
+def update_product(product, seller, quantity): # aggirona i prodotti sul database
     conn = connect()
     cur = conn.cursor()
     num_products = cur.execute('SELECT quantity FROM product WHERE seller_id = ? AND product_name = ?', (seller, product))
@@ -79,7 +77,7 @@ def update_product(product, seller, quantity):
         cur.execute('UPDATE product SET quantity = ? WHERE seller_id = ? AND product_name = ?', (new_quantity, seller, product))
     conn.close()
 
-def init_db(): #Crea il database
+def init_db(): # crea il database
     conn = connect()
     with open(join("sql", "market.sql"), encoding="utf-8") as f:
         conn.executescript(f.read())

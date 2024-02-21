@@ -56,6 +56,9 @@ def listen_to_buyer(sock): # function to serve buyer clients
                     else:
                         sock.send("The seller you have chosen is not valid.\n".encode())
                 negotiation(sock, seller_id)
+                sock.send(f"What amount of {product} do you want to take?\n".encode())
+                quantity = int_message(sock, "Quantity not valid.\n")
+                db_lib.update_product(product, seller_id, quantity)
             else:
                 if product == "la":
                     sock.send("There are no items in the market at this moment.\n".encode())
@@ -104,7 +107,7 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                 elif msg == 'd':
                     sock.send("Which product do you want to delete?\n".encode())
                     product = sock.recv(256).decode()
-                    s.send((db_lib.delete_product(product, seller_id) + '\n').encode())
+                    sock.send((db_lib.delete_product(product, seller_id) + '\n').encode())
                 else:
                     if not users[seller_id]["negotiating"]:
                         sock.send("Command not valid\n".encode())
@@ -135,7 +138,6 @@ def negotiation(buyer_sock, seller_id): # controls that both the seller and the 
         seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
         users[seller_id]["negotiating"] = False
         del prices[seller_id]
-        # TODO check that the number of items is available and after remove n
     except:
         buyer_sock.shutdown(socket.SHUT_RDWR)
         buyer_sock.close()
@@ -163,8 +165,9 @@ def chatting(buyer_sock, seller_id): # function to make the seller and the buyer
             prices[seller_id][1] = price
             seller_sock.send((str(price)+'\n').encode())
             users[seller_id]["turn"] = True
+    users[seller_id]["turn"] = True
 
-def int_message(sock, error_message): # always returns an integer given by the client
+def int_message(sock, error_message): # always returns a positive integer given by the client
     try:
         error_message = error_message.encode()
         int_msg = sock.recv(256).decode()
