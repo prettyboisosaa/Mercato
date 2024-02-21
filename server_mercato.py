@@ -29,7 +29,6 @@ def listen_to_client(sock): # function to select the type of client
     except:
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-        
 
 def listen_to_buyer(sock): # function to serve buyer clients
     try:
@@ -47,6 +46,8 @@ def listen_to_buyer(sock): # function to serve buyer clients
                             break
                         else:
                             sock.send(f"{product} is not an available product.\nChoose a valid product.\n".encode())
+                else:
+                    pass
                 sock.send("Who do you want to buy from?\n".encode())
                 while True:
                     seller_id = sock.recv(1024).decode()
@@ -76,6 +77,8 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                             msg = sock.recv(256).decode()
                             if msg or users[seller_id]["negotiating"]:
                                 break
+                            else:
+                                pass
                         except:
                             continue
                 except:
@@ -113,11 +116,12 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
         
-def negotiation(buyer_sock, seller_id):
+def negotiation(buyer_sock, seller_id): # controls that both the seller and the buyer are ready to chat
     try:
-
         if users[seller_id]["negotiating"]:
             buyer_sock.send("Seller is already negotiating. Wait until he finishes...\n".encode())
+        else:
+            pass
         while users[seller_id]["negotiating"]:
             pass
         users[seller_id]["negotiating"] = True
@@ -137,8 +141,7 @@ def negotiation(buyer_sock, seller_id):
         seller_sock.shutdown(socket.SHUT_RDWR)
         seller_sock.close()
 
-
-def chatting(buyer_sock, seller_id):
+def chatting(buyer_sock, seller_id): # function to make the seller and the buyer chat to agree on the price
     wait_turn = "Wait for your turn.\n".encode()
     your_turn = "It's your turn, write the price.\n".encode()
     seller_sock = users[seller_id]["conn"]
@@ -174,8 +177,7 @@ def int_message(sock, error_message): # always returns an integer given by the c
                     int_msg = sock.recv(256).decode()
             except:
                 sock.send(error_message)
-                int_msg = sock.recv(256).decode()
-            
+                int_msg = sock.recv(256).decode()     
     except:
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
@@ -186,18 +188,19 @@ def closeUsers(users):
     for index, user in users.items():
         user["conn"].shutdown(socket.SHUT_RDWR)
         user["conn"].close()
-      
 
-def flush(sock):
+def flush(sock): # clears the read buffer
     try:
-        sock.setblocking(False)
+        sock.setblocking(0)
         while True:
             if not sock.recv(1024):
                 break
+            else:
+                pass
     except:
         pass
     finally:
-        sock.setblocking(True)
+        sock.setblocking(1)
 
 db_lib.init_db()
 with socket.socket() as s:
