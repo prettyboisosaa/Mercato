@@ -130,6 +130,7 @@ def negotiation(buyer_sock, seller_id):
         buyer_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
         seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
         users[seller_id]["negotiating"] = False
+        del prices[seller_id]
     except:
         buyer_sock.shutdown(socket.SHUT_RDWR)
         buyer_sock.close()
