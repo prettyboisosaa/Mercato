@@ -2,7 +2,7 @@ import socket
 from threading import Thread
 from sql import db_lib
 
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"
 PORT = 8080
 index = 0
 users = {}
@@ -27,7 +27,6 @@ def listen_to_client(sock): # function to select the type of client
             else:
                 sock.send("You can only buy or sell.\n".encode())
     except:
-        closeUsers()
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
         
@@ -62,7 +61,6 @@ def listen_to_buyer(sock): # function to serve buyer clients
                 else:
                     sock.send("What you searched is not available right now.\n".encode())
     except:
-        closeUsers()
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
 
@@ -92,9 +90,9 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                     sock.send("Which product do you want to add/change?\n".encode())
                     product = sock.recv(256).decode()
                     sock.send("What is the price each?\n".encode())
-                    price = int_message(sock, "Only integers accepted.\nWhat is its price?\n")
+                    price = int_message(sock, "Only positive integers accepted.\nWhat is its price?\n")
                     sock.send(f"How many {product} do you want to sell?\n".encode())
-                    quantity = int_message(sock, "Only integers accepted.\nHow many of it do you want to sell?\n")
+                    quantity = int_message(sock, "Only positive integers accepted.\nHow many of it do you want to sell?\n")
                     try:
                         db_lib.insert_product(product, seller_id, price, quantity)
                         sock.send(f"Added/Changed: {product}\nQuantity: {quantity}\nPrice each: {price}\n".encode())
@@ -112,41 +110,32 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
             else:
                 pass
     except:
-        closeUsers()
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
-
-def int_message(sock, error_message): # always returns an integer given by the client
-    try:
-        error_message = error_message.encode()
-        int_msg = sock.recv(256).decode()
-        while not isinstance(int_msg, int):
-            try:
-                int_msg = int(int_msg)
-            except:
-                sock.send(error_message)
-                int_msg = sock.recv(256).decode()
-        return int_msg
-    except:
-        closeUsers()
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
         
 def negotiation(buyer_sock, seller_id):
-    if users[seller_id]["negotiating"]:
-        buyer_sock.send("Seller is already negotiating. Wait until he finishes...\n".encode())
-    while users[seller_id]["negotiating"]:
-        pass
-    users[seller_id]["negotiating"] = True
-    seller_sock = users[seller_id]["conn"]
-    flush(buyer_sock)
-    buyer_sock.send("Negotiation with seller started.\nOnly integers will be sent to the seller to negotiate.\n".encode())
-    seller_sock.send("Negotiation with buyer started.\nOnly integers will be sent to the buyer to negotiate.\n".encode())
-    prices[seller_id] = [0, 1]
-    chatting(buyer_sock, seller_id)
-    buyer_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
-    seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
-    users[seller_id]["negotiating"] = False
+    try:
+
+        if users[seller_id]["negotiating"]:
+            buyer_sock.send("Seller is already negotiating. Wait until he finishes...\n".encode())
+        while users[seller_id]["negotiating"]:
+            pass
+        users[seller_id]["negotiating"] = True
+        seller_sock = users[seller_id]["conn"]
+        flush(buyer_sock)
+        buyer_sock.send("Negotiation with seller started.\nOnly integers will be sent to the seller to negotiate.\n".encode())
+        seller_sock.send("Negotiation with buyer started.\nOnly integers will be sent to the buyer to negotiate.\n".encode())
+        prices[seller_id] = [0, 1]
+        chatting(buyer_sock, seller_id)
+        buyer_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
+        seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
+        users[seller_id]["negotiating"] = False
+    except:
+        buyer_sock.shutdown(socket.SHUT_RDWR)
+        buyer_sock.close()
+        seller_sock.shutdown(socket.SHUT_RDWR)
+        seller_sock.close()
+
 
 def chatting(buyer_sock, seller_id):
     wait_turn = "Wait for your turn.\n".encode()
@@ -157,7 +146,7 @@ def chatting(buyer_sock, seller_id):
             buyer_sock.send(wait_turn)
             seller_sock.send(your_turn)
             flush(seller_sock)
-            price = int_message(seller_sock, "Only integer prices accepted.\n")
+            price = int_message(seller_sock, "Only positive integer prices accepted.\n")
             prices[seller_id][0] = price
             buyer_sock.send((str(price)+'\n').encode())
             users[seller_id]["turn"] = False
@@ -165,10 +154,32 @@ def chatting(buyer_sock, seller_id):
             seller_sock.send(wait_turn)
             buyer_sock.send(your_turn)
             flush(buyer_sock)
-            price = int_message(buyer_sock, "Only integer prices accepted.\n")
+            price = int_message(buyer_sock, "Only positive integer prices accepted.\n")
             prices[seller_id][1] = price
             seller_sock.send((str(price)+'\n').encode())
             users[seller_id]["turn"] = True
+
+def int_message(sock, error_message): # always returns an integer given by the client
+    try:
+        error_message = error_message.encode()
+        int_msg = sock.recv(256).decode()
+        while not isinstance(int_msg, int):
+            try:
+                int_msg = int(int_msg)
+                if int(int_msg) >= 0:
+                    break
+                else:
+                    sock.send(error_message)
+                    int_msg = sock.recv(256).decode()
+            except:
+                sock.send(error_message)
+                int_msg = sock.recv(256).decode()
+            
+    except:
+        sock.shutdown(socket.SHUT_RDWR)
+        sock.close()
+        int_msg = -1
+    return int_msg
 
 def closeUsers(users):
     for index, user in users.items():
@@ -189,6 +200,7 @@ def flush(sock):
 
 db_lib.init_db()
 with socket.socket() as s:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HOST, PORT))
     s.listen()
     print(f"Listening on port {PORT}...")
