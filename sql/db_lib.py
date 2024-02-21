@@ -22,13 +22,17 @@ def list_products(product):
                 row_dict[column_names[i]] = value
             products.append(row_dict)
     else:
-        fetch_name = cur.execute("SELECT seller_id FROM product WHERE product_name = ?", (product,)).fetchone()
-        products =  {'seller_id' : fetch_name[0], 'product_name' : product}
+        for row in fetch_data:
+            fetch_data = cur.execute("SELECT seller_id, price, quantity FROM product WHERE product_name = ?", (product,)).fetchone()
+            id = fetch_data[0]
+            price = fetch_data[1]
+            quantity = fetch_data[2]
+
+            products =  {'seller_id' : id, 'product_name' : product, 'price' : price, 'quantity' : quantity}
 
 
     conn.close()
     return products
-
 def insert_product(product, seller, price, quantity): # inserisce i prodotti nel databse
     conn = connect()
     cur = conn.cursor()
