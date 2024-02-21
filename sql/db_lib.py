@@ -42,10 +42,15 @@ def insert_product(product, seller, price, quantity): # inserisce i prodotti nel
 def delete_product(product, seller): # elimina i prodotti dal databse
     conn = connect()
     cur = conn.cursor()
+    message = ''
     if check_product(product, seller):
         cur.execute("DELETE FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
         conn.commit()
+        message = 'product deleted'
+    else:
+        message = 'the product doesnt exist: you cant delete'
     conn.close()
+    return message
 
 def check_product(product): # controlla se il prodotto selezionato esiste
     conn = connect()
@@ -55,13 +60,24 @@ def check_product(product): # controlla se il prodotto selezionato esiste
     conn.close()
     return result[0] > 0
 
-def check_seller(seller_id, product): # controlla se il prodotto selezionato esiste
+def check_seller(product, seller): # controlla se il prodotto selezionato esiste
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM product WHERE seller_id = ? AND product_name = ?", (seller_id, product))
+    cur.execute("SELECT COUNT(*) FROM product WHERE product = ? AND seller_id = ?", (product, seller))
     result = cur.fetchone()
     conn.close()
     return result[0] > 0
+
+def update_product(product, seller, quantity):
+    conn = connect()
+    cur = conn.cursor()
+    num_products = cur.execute('SELECT quantity FROM product WHERE seller_id = ? AND product_name = ?', (seller, product))
+    if num_products == quantity:
+        delete_product(product)
+    else:
+        new_quantity = int(num_products) - quantity
+        cur.execute('UPDATE product SET quantity = ? WHERE seller_id = ? AND product_name = ?', (new_quantity, seller, product))
+    conn.close()
 
 def init_db(): #Crea il database
     conn = connect()

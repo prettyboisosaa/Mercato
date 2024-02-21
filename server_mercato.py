@@ -51,7 +51,7 @@ def listen_to_buyer(sock): # function to serve buyer clients
                 sock.send("Who do you want to buy from?\n".encode())
                 while True:
                     seller_id = sock.recv(1024).decode()
-                    if db_lib.check_seller(seller_id, product):
+                    if db_lib.check_seller(product, seller_id):
                         break
                     else:
                         sock.send("The seller you have chosen is not valid.\n".encode())
@@ -104,7 +104,7 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                 elif msg == 'd':
                     sock.send("Which product do you want to delete?\n".encode())
                     product = sock.recv(256).decode()
-                    db_lib.delete_product(product, seller_id)
+                    s.send((db_lib.delete_product(product, seller_id) + '\n').encode())
                 else:
                     if not users[seller_id]["negotiating"]:
                         sock.send("Command not valid\n".encode())
@@ -135,6 +135,7 @@ def negotiation(buyer_sock, seller_id): # controls that both the seller and the 
         seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
         users[seller_id]["negotiating"] = False
         del prices[seller_id]
+        # TODO check that the number of items is available and after remove n
     except:
         buyer_sock.shutdown(socket.SHUT_RDWR)
         buyer_sock.close()
