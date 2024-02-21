@@ -8,31 +8,30 @@ def connect(): # apre la connessione al database, se non esiste lo crea
     return conn
 
 def list_products(product):
-    conn = connect()
+    conn = connect()  # Make sure connect() function is defined elsewhere
     cur = conn.cursor()
-    products = None
+    products = []
+
     if product == "la":
-        products = cur.execute("SELECT seller_id, product_name FROM product")
-        #ottiene i nomi delle colonne dal cur
-        column_names = [description[0] for description in cur.description]
-        products = []
-        for row in cur.fetchall():
-            row_dict = {}
-            for i, value in enumerate(row):
-                row_dict[column_names[i]] = value
-            products.append(row_dict)
+        cur.execute("SELECT seller_id, product_name, price, quantity FROM product")
+        rows = cur.fetchall()
+        for row in rows:
+            seller_id, product_name, price, quantity = row
+            products.append({'seller_id': seller_id, 'product_name': product_name, 'price': price, 'quantity': quantity})
     else:
-        for row in fetch_data:
-            fetch_data = cur.execute("SELECT seller_id, price, quantity FROM product WHERE product_name = ?", (product,)).fetchone()
-            id = fetch_data[0]
-            price = fetch_data[1]
-            quantity = fetch_data[2]
-
-            products =  {'seller_id' : id, 'product_name' : product, 'price' : price, 'quantity' : quantity}
-
-
+        fetch_data = cur.execute("SELECT seller_id, price, quantity FROM product WHERE product_name = ?", (product,)).fetchall()
+        try:
+            for row in fetch_data:
+                seller_id = row[0]
+                price = row[1]
+                quantity = row[2]
+                products.append({'seller_id': seller_id, 'product_name': product, 'price': price, 'quantity': quantity})
+        except IndexError:
+            pass  
     conn.close()
     return products
+
+
 def insert_product(product, seller, price, quantity): # inserisce i prodotti nel databse
     conn = connect()
     cur = conn.cursor()
