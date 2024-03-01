@@ -12,6 +12,10 @@ def sender():
             s.shutdown(socket.SHUT_RDWR)
             s.close()
             break
+        if msg == "exit":
+            s.shutdown(socket.SHUT_RDWR)
+            s.close()
+            break
 
 with socket.socket() as s:
     try:

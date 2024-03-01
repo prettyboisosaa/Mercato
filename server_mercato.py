@@ -18,7 +18,7 @@ def listen_to_client(sock): # function to select the type of client
             if msg in ["buy", "sell"]:
                 if msg == "buy":
                     users[str(index)] = {"conn" : sock, "mode" : "buy"}
-                    Thread(target=listen_to_buyer, args=(sock,)).start()
+                    Thread(target=listen_to_buyer, args=(sock, str(index))).start()
                 else:
                     users[str(index)] = {"conn" : sock, "mode" : "sell", "negotiating" : False, "turn" : True}
                     Thread(target=listen_to_seller, args=(sock, str(index))).start()
@@ -30,10 +30,10 @@ def listen_to_client(sock): # function to select the type of client
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
 
-def listen_to_buyer(sock): # function to serve buyer clients
+def listen_to_buyer(sock, buyer_id): # function to serve buyer clients
     try:
         while True:
-            sock.send("Write what you want to buy or 'la' to list all the available products.\n".encode())
+            sock.send("Write what you want to buy or 'la' to list all the available products.\nexit to close.\n".encode())
             product = sock.recv(1024).decode()
             product_list = db_lib.list_products(product)
             if product_list != []:
@@ -46,8 +46,6 @@ def listen_to_buyer(sock): # function to serve buyer clients
                             break
                         else:
                             sock.send(f"{product} is not an available product.\nChoose a valid product.\n".encode())
-                else:
-                    pass
                 sock.send("Who do you want to buy from?\n".encode())
                 while True:
                     seller_id = sock.recv(1024).decode()
@@ -72,7 +70,7 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
     try:
         while True:
             if not users[seller_id]["negotiating"]:
-                sock.send("Press:\n c to add/change you products.\n d to delete a product.\nOr just wait for somebody to buy.\n".encode())
+                sock.send("Press:\n c to add/change you products.\n d to delete a product.\nOr just wait for somebody to buy.\nexit to close.\n".encode())
                 try:
                     sock.setblocking(0)
                     while True:
@@ -80,8 +78,6 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                             msg = sock.recv(256).decode()
                             if msg or users[seller_id]["negotiating"]:
                                 break
-                            else:
-                                pass
                         except:
                             continue
                 except:
@@ -90,31 +86,31 @@ def listen_to_seller(sock, seller_id): # function to serve seller clients
                     sock.setblocking(1)
                 if users[seller_id]["negotiating"]:
                     msg = "skip"
-                else:
-                    pass
-                if msg == 'c': # logic to add or change products
-                    sock.send("Which product do you want to add/change?\n".encode())
-                    product = sock.recv(256).decode()
-                    sock.send("What is the price each?\n".encode())
-                    price = int_message(sock, "Only positive integers accepted.\nWhat is its price?\n")
-                    sock.send(f"How many {product} do you want to sell?\n".encode())
-                    quantity = int_message(sock, "Only positive integers accepted.\nHow many of it do you want to sell?\n")
-                    try:
-                        db_lib.insert_product(product, seller_id, price, quantity)
-                        sock.send(f"Added/Changed: {product}\nQuantity: {quantity}\nPrice each: {price}\n".encode())
-                    except:
-                        sock.send("Something went wrong, please try again.\n".encode())
-                elif msg == 'd':
-                    sock.send("Which product do you want to delete?\n".encode())
-                    product = sock.recv(256).decode()
-                    sock.send((db_lib.delete_product(product, seller_id) + '\n').encode())
-                else:
-                    if not users[seller_id]["negotiating"]:
-                        sock.send("Command not valid\n".encode())
-                    else:
-                        pass
-            else:
-                pass
+                match msg:
+                    case 'c': # logic to add or change products
+                        sock.send("Which product do you want to add/change?\n".encode())
+                        product = sock.recv(256).decode()
+                        sock.send("What is the price each?\n".encode())
+                        price = int_message(sock, "Only positive integers accepted.\nWhat is its price?\n")
+                        sock.send(f"How many {product} do you want to sell?\n".encode())
+                        quantity = int_message(sock, "Only positive integers accepted.\nHow many of it do you want to sell?\n")
+                        try:
+                            db_lib.insert_product(product, seller_id, price, quantity)
+                            sock.send(f"Added/Changed: {product}\nQuantity: {quantity}\nPrice each: {price}\n".encode())
+                        except:
+                            sock.send("Something went wrong, please try again.\n".encode())
+                    case 'd':
+                        sock.send("Which product do you want to delete?\n".encode())
+                        product = sock.recv(256).decode()
+                        sock.send((db_lib.delete_product(product, seller_id) + '\n').encode())
+                    case 'exit':
+                        sock.shutdown(socket.SHUT_RDWR)
+                        sock.close()
+                        db_lib.delete_seller(seller_id)
+                        break
+                    case _:
+                        if not users[seller_id]["negotiating"]:
+                            sock.send("Command not valid\n".encode())
     except:
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
@@ -123,8 +119,6 @@ def negotiation(buyer_sock, seller_id): # controls that both the seller and the 
     try:
         if users[seller_id]["negotiating"]:
             buyer_sock.send("Seller is already negotiating. Wait until he finishes...\n".encode())
-        else:
-            pass
         while users[seller_id]["negotiating"]:
             pass
         users[seller_id]["negotiating"] = True
@@ -132,7 +126,7 @@ def negotiation(buyer_sock, seller_id): # controls that both the seller and the 
         flush(buyer_sock)
         buyer_sock.send("Negotiation with seller started.\nOnly integers will be sent to the seller to negotiate.\n".encode())
         seller_sock.send("Negotiation with buyer started.\nOnly integers will be sent to the buyer to negotiate.\n".encode())
-        prices[seller_id] = [0, 1]
+        prices[seller_id] = [-1, -2]
         chatting(buyer_sock, seller_id)
         buyer_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
         seller_sock.send(f"Negotiation ended.\nFinal price: {prices[seller_id][0]}.\n".encode())
@@ -199,8 +193,6 @@ def flush(sock): # clears the read buffer
         while True:
             if not sock.recv(1024):
                 break
-            else:
-                pass
     except:
         pass
     finally:

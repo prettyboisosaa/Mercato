@@ -2,10 +2,13 @@ from os.path import join
 import sqlite3
 
 def connect(): # apre la connessione al database, se non esiste lo crea
-    filename_db = join("sql", "market.db")
-    conn = sqlite3.connect(filename_db)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        filename_db = join("sql", "market.db")
+        conn = sqlite3.connect(filename_db)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except:
+        return "Cannot connect to database."
 
 def list_products(product):
     conn = connect()  # Make sure connect() function is defined elsewhere
@@ -40,7 +43,6 @@ def insert_product(product, seller, price, quantity): # inserisce i prodotti nel
 def delete_product(product, seller): # elimina i prodotti dal databse
     conn = connect()
     cur = conn.cursor()
-    message = ""
     if check_seller(product, seller):
         cur.execute("DELETE FROM product WHERE product_name = ? AND seller_id = ?", (product, seller))
         conn.commit()
@@ -49,6 +51,13 @@ def delete_product(product, seller): # elimina i prodotti dal databse
         message = "the product doesnt exist: you cant delete."
     conn.close()
     return message
+
+def delete_seller(seller):
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM product WHERE seller_id = ?", (seller,))
+    conn.commit()
+    conn.close()
 
 def check_product(product): # controlla se il prodotto selezionato esiste
     conn = connect()
